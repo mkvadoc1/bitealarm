@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "BiteAlarm",
+    "slug": "bitealarm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0F"
+    },
+    "ios": {
+      "bundleIdentifier": "com.mkvadoc.bitealarm",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "BiteAlarm potrebuje Bluetooth na komunikáciu s prijímačom alarmu.",
+        "NSBluetoothPeripheralUsageDescription": "BiteAlarm potrebuje Bluetooth na komunikáciu s prijímačom alarmu.",
+        "UIBackgroundModes": ["bluetooth-central", "fetch", "remote-notification"]
+      }
+    },
+    "android": {
+      "package": "com.mkvadoc.bitealarm",
+      "versionCode": 1,
+      "permissions": [
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_SCAN",
+        "BLUETOOTH_CONNECT",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": ["peripheral", "central"],
+          "bluetoothAlwaysPermission": "BiteAlarm potrebuje Bluetooth na komunikáciu s alarmom."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0A0A0F",
+          "sounds": []
+        }
+      ]
+    ],
+    "scheme": "bitealarm",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
