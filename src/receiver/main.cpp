@@ -66,6 +66,14 @@ struct NodeState {
 NodeState nodes[ESPNOW_MAX_NODES];
 
 // ════════════════════════════════════════════════════════════════════
+// TLAČIDLO
+// ════════════════════════════════════════════════════════════════════
+bool     systemEnabled  = true;
+bool     lastBtnState   = HIGH;
+uint32_t btnPressTime   = 0;
+bool     btnHandled     = false;
+
+// ════════════════════════════════════════════════════════════════════
 // ALARM
 // ════════════════════════════════════════════════════════════════════
 volatile bool    alarmPending = false;
@@ -101,6 +109,7 @@ void sendStatus();
 void checkNodeTimeouts();
 void bleSetup();
 void updateStatusLed();
+void handleButton();
 
 // ════════════════════════════════════════════════════════════════════
 // ESP-NOW CALLBACK
@@ -133,6 +142,7 @@ void setup() {
     pinMode(PIN_VIBRO,     OUTPUT);
     pinMode(PIN_LED_RED,   OUTPUT);
     pinMode(PIN_LED_GREEN, OUTPUT);
+    pinMode(PIN_BUTTON,    INPUT_PULLUP);
     digitalWrite(PIN_VIBRO,     LOW);
     digitalWrite(PIN_LED_RED,   LOW);
     digitalWrite(PIN_LED_GREEN, LOW);
@@ -168,13 +178,15 @@ void setup() {
 
 // ════════════════════════════════════════════════════════════════════
 void loop() {
+    handleButton();
+
     // Spracuj záber z ESP-NOW ISR
     if (alarmPending) {
         alarmPending = false;
         uint8_t nid = alarmNodeId;
         Serial.printf("[ALARM] Záber — prút %d\n", nid);
         bleSend("EVENT:BITE:" + String(nid));
-        if (!alarmActive) startAlarm(nid);
+        if (!alarmActive && systemEnabled) startAlarm(nid);
     }
 
     updateAlarm();
@@ -183,16 +195,72 @@ void loop() {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// TLAČIDLO ON/OFF
+// ════════════════════════════════════════════════════════════════════
+void handleButton() {
+    bool raw = digitalRead(PIN_BUTTON);
+
+    // Zachytenie nábehovej hrany (stlačenie)
+    if (raw == LOW && lastBtnState == HIGH) {
+        btnPressTime = millis();
+        btnHandled   = false;
+    }
+
+    // Dlhé stlačenie (2s) → reset červenej LED (vymaž pamäť záberov)
+    if (raw == LOW && !btnHandled) {
+        if ((millis() - btnPressTime) >= BUTTON_LONG_PRESS_MS) {
+            btnHandled = true;
+            digitalWrite(PIN_LED_RED, LOW);
+            Serial.println("[BTN] Reset červenej LED");
+            bleSend("EVENT:LED_RESET");
+            // Potvrdzovacie pípnutie
+            toneOn(1500, 3); delay(80); toneOff();
+            delay(80);
+            toneOn(1500, 3); delay(80); toneOff();
+        }
+    }
+
+    // Krátke uvoľnenie → toggle ON/OFF
+    if (raw == HIGH && lastBtnState == LOW && !btnHandled) {
+        if ((millis() - btnPressTime) >= BUTTON_DEBOUNCE_MS) {
+            if (alarmActive) {
+                // Počas alarmu → zastav alarm
+                stopAlarm();
+                bleSend("EVENT:ALARM_STOP");
+                Serial.println("[BTN] Alarm zastavený");
+            } else {
+                // Mimo alarmu → toggle systém
+                systemEnabled = !systemEnabled;
+                Serial.printf("[BTN] Systém %s\n", systemEnabled ? "ON" : "OFF");
+                bleSend(systemEnabled ? "EVENT:POWER:ON" : "EVENT:POWER:OFF");
+                // Indikácia: 1 pípnutie = ON, 2 pípnutia = OFF
+                toneOn(2000, 4); delay(100); toneOff();
+                if (!systemEnabled) { delay(100); toneOn(2000, 4); delay(100); toneOff(); }
+            }
+        }
+    }
+
+    lastBtnState = raw;
+}
+
+// ════════════════════════════════════════════════════════════════════
 // STATUS LED (zelená)
 // ════════════════════════════════════════════════════════════════════
 void updateStatusLed() {
     if (alarmActive) return;  // počas alarmu riadi červená
 
+    if (!systemEnabled) {
+        // Systém OFF → obe LED zhasnuté, len pomalé blikanie zelenej
+        digitalWrite(PIN_LED_RED, LOW);
+        digitalWrite(PIN_LED_GREEN, (millis() / 1000) % 2);
+        return;
+    }
+
     if (bleConnected) {
         // BT pripojený → zelená svieti trvale
         digitalWrite(PIN_LED_GREEN, HIGH);
     } else {
-        // BT nepripojený → zelená bliká každú sekundu
+        // BT nepripojený → zelená bliká rýchlo
         digitalWrite(PIN_LED_GREEN, (millis() / 500) % 2);
     }
 }

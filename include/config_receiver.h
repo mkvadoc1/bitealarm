@@ -1,10 +1,11 @@
 #pragma once
 
 // ─── PINY ────────────────────────────────────────────────────────────
-#define PIN_BUZZER      25   // Piezo bzučiak (LEDC PWM)
+#define PIN_BUZZER      25   // LM386 modul IN (LEDC PWM)
 #define PIN_VIBRO       26   // Vibračný modul (IN pin)
 #define PIN_LED_RED     27   // Červená LED — alarm / záber (cez 100Ω)
 #define PIN_LED_GREEN   14   // Zelená LED — BT status (cez 100Ω)
+#define PIN_BUTTON      32   // Tlačidlo ON/OFF (INPUT_PULLUP, druhý pin → GND)
 // Poznámka: PIN_RGB_DATA (WS2812B) — pridaj neskôr na GPIO 13
 
 // ─── LEDC ────────────────────────────────────────────────────────────
@@ -36,6 +37,10 @@
 #define LED_FLASH_MS        300   // dĺžka jedného záblesku
 #define LED_FLASH_COUNT       6   // počet záblesku pri alarme
 #define LED_FLASH_PAUSE_MS  200
+
+// ─── TLAČIDLO ────────────────────────────────────────────────────────
+#define BUTTON_DEBOUNCE_MS      50
+#define BUTTON_LONG_PRESS_MS  2000   // dlhé stlačenie = reset červenej LED
 
 // ─── TIMEOUT ─────────────────────────────────────────────────────────
 // Ak node nepošle heartbeat dlhšie ako toto, označí sa ako offline
