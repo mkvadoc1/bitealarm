@@ -4,7 +4,7 @@ import { NODE_COLORS, NODE_NAMES } from '../constants';
 export interface NodeState {
   id:       number;
   online:   boolean;
-  battery:  number;   // -1 = neznáme
+  battery:  number;
   hadBite:  boolean;
   lastSeen: Date | null;
   color:    string;
@@ -19,35 +19,25 @@ export interface BiteEvent {
 }
 
 interface AlarmStore {
-  // BLE
-  isConnected:   boolean;
-  isScanning:    boolean;
-  deviceName:    string;
+  isConnected:    boolean;
+  isScanning:     boolean;
+  deviceName:     string;
+  alarmActive:    boolean;
+  alarmNodeId:    number;
+  nodes:          NodeState[];
+  biteLog:        BiteEvent[];
+  volume:         number;
+  toneHz:         number;
+  vibro:          boolean;
+  sound:          boolean;
 
-  // Aktívny alarm
-  alarmActive:   boolean;
-  alarmNodeId:   number;
-
-  // Nody (len 2 pre aktuálny setup)
-  nodes:         NodeState[];
-
-  // Log záberov
-  biteLog:       BiteEvent[];
-
-  // Nastavenia receivera
-  volume:        number;
-  toneHz:        number;
-  vibro:         boolean;
-  sound:         boolean;
-
-  // Actions
-  setConnected:  (v: boolean, name?: string) => void;
-  setScanning:   (v: boolean) => void;
-  triggerBite:   (nodeId: number) => void;
-  clearAlarm:    () => void;
-  updateNode:    (nodeId: number, data: Partial<NodeState>) => void;
-  applyStatus:   (raw: string) => void;
-  resetBiteFlags:() => void;
+  setConnected:   (v: boolean, name?: string) => void;
+  setScanning:    (v: boolean) => void;
+  triggerBite:    (nodeId: number) => void;
+  clearAlarm:     () => void;
+  updateNode:     (nodeId: number, data: Partial<NodeState>) => void;
+  applyStatus:    (raw: string) => void;
+  resetBiteFlags: () => void;
 }
 
 const makeNodes = (): NodeState[] =>
@@ -62,17 +52,17 @@ const makeNodes = (): NodeState[] =>
   }));
 
 export const useAlarmStore = create<AlarmStore>((set, get) => ({
-  isConnected:  false,
-  isScanning:   false,
-  deviceName:   '',
-  alarmActive:  false,
-  alarmNodeId:  0,
-  nodes:        makeNodes(),
-  biteLog:      [],
-  volume:       7,
-  toneHz:       2500,
-  vibro:        true,
-  sound:        true,
+  isConnected: false,
+  isScanning:  false,
+  deviceName:  '',
+  alarmActive: false,
+  alarmNodeId: 0,
+  nodes:       makeNodes(),
+  biteLog:     [],
+  volume:      7,
+  toneHz:      2500,
+  vibro:       true,
+  sound:       true,
 
   setConnected: (v, name = '') => set(s => ({
     isConnected: v,
@@ -85,16 +75,11 @@ export const useAlarmStore = create<AlarmStore>((set, get) => ({
   triggerBite: (nodeId) => {
     const node = get().nodes.find(n => n.id === nodeId);
     if (!node) return;
-    const event: BiteEvent = {
-      nodeId,
-      time:  new Date(),
-      color: node.color,
-      name:  node.name,
-    };
+    const event: BiteEvent = { nodeId, time: new Date(), color: node.color, name: node.name };
     set(s => ({
       alarmActive: true,
       alarmNodeId: nodeId,
-      nodes: s.nodes.map(n => n.id === nodeId ? { ...n, hadBite: true } : n),
+      nodes:   s.nodes.map(n => n.id === nodeId ? { ...n, hadBite: true } : n),
       biteLog: [event, ...s.biteLog].slice(0, 50),
     }));
   },
@@ -108,7 +93,6 @@ export const useAlarmStore = create<AlarmStore>((set, get) => ({
   })),
 
   applyStatus: (raw) => {
-    // STATUS:VOL:7|TONE:2500|VIBRO:ON|SOUND:ON|ALARM:NO
     const parts = raw.replace('STATUS:', '').split('|');
     const update: Partial<AlarmStore> = {};
     for (const p of parts) {

@@ -5,19 +5,12 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "simulator": false
-      }
+      "distribution": "internal"
     },
     "production": {
       "autoIncrement": true,
-      "ios": {
-        "distribution": "store"
-      },
-      "android": {
-        "buildType": "apk"
-      }
+      "ios": { "distribution": "store" },
+      "android": { "buildType": "apk" }
     }
   },
   "submit": {
