@@ -1,10 +1,11 @@
 #pragma once
 
 // ─── PINY ────────────────────────────────────────────────────────────
-#define PIN_BUZZER      25   // Piezo / malý reproduktor (LEDC PWM)
-#define PIN_VIBRO       26   // Vibračný motor (cez tranzistor/MOSFET)
-#define PIN_RGB_DATA    27   // WS2812B dátový pin (FastLED)
-#define NUM_LEDS         1   // počet WS2812B LED
+#define PIN_BUZZER      25   // Piezo bzučiak (LEDC PWM)
+#define PIN_VIBRO       26   // Vibračný modul (IN pin)
+#define PIN_LED_RED     27   // Červená LED — alarm / záber (cez 100Ω)
+#define PIN_LED_GREEN   14   // Zelená LED — BT status (cez 100Ω)
+// Poznámka: PIN_RGB_DATA (WS2812B) — pridaj neskôr na GPIO 13
 
 // ─── LEDC ────────────────────────────────────────────────────────────
 #define LEDC_CHANNEL    0
@@ -32,7 +33,6 @@
 #define ALARM_VIBRO_COUNT      3
 
 // ─── LED ─────────────────────────────────────────────────────────────
-#define LED_BRIGHTNESS      200   // 0–255  (znižuje príkon)
 #define LED_FLASH_MS        300   // dĺžka jedného záblesku
 #define LED_FLASH_COUNT       6   // počet záblesku pri alarme
 #define LED_FLASH_PAUSE_MS  200
